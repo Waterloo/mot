@@ -121,20 +121,22 @@ function send(message) {
 
         } else {
             //Regular Expression to parse names from botzilla message
-            var reply_to = message.reply_to_message.text;
-            //.match(/((?:[a-z0-9_@]+):+)/i);
+            if(message.reply_to_message.photo)
+            msg = message.from.first_name + ' ' + message.from.last_name + '(in reply to ' + message.reply_to_message.from.first_name + ' ' + message.reply_to_message.from.last_name + ' :  Image ) : ' + message.text ;
+            else
+
+            /*var reply_to = message.reply_to_message.text.match(/((?:[a-z0-9_@]+):+)/i);
             if (reply_to != undefined) {
                 console.log('here');
-                msg = message.from.first_name + '(in reply to ' + message.reply_to_message.first_name + ' ' + message.reply_to_message.last_name + ' : ' + message.reply_to_message.text + ') : ' + message.text;
-            } else
-                msg = message.from.first_name + message.from.last_name + '(in reply to (' + message.reply_to_message.from.first_name + '_' + message.reply_to_message.from.last_name + ' : ' + message.reply_to_message.text + ')) : ' + message.text ;
+                msg = message.from.first_name + ' ' + message.from.last_name +'(in reply to ' + message.reply_to_message.first_name + ' ' + message.reply_to_message.last_name + ' : ' + message.reply_to_message.text + ') : ' + message.text + 'this1';
+                msg = message.from.first_name + ' ' + message.from.last_name '(in reply to ' + reply_to[0] + ') : ' + message.text;
+            } else*/
+                msg = message.from.first_name + message.from.last_name + '(in reply to (' + message.reply_to_message.from.first_name + ' ' + message.reply_to_message.from.last_name + ' : ' + message.reply_to_message.text + ')) : ' + message.text;
         }
 
 
     } else {
-
-        msg = message.from.first_name + ' ' + message.from.last_name + ' : ' + message.text;
-
+            msg = message.from.first_name + ' ' + message.from.last_name + ' : ' + message.text + 'this';
     }
     var current_timestamp = moment().format('DD MM YYYY, hh:mm A');
     client.say(env.channel, msg);
