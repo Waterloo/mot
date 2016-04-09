@@ -26,20 +26,20 @@ var options = {
 wstream = fs.createWriteStream(filename, options);
 
 
-//reading meeting status in sync 
+//reading meeting status in sync
 var meeting_status = fs.readFileSync('./mod', 'ascii');
 
 //setting up irc configs
 var client = new irc.Client(env.server, env.nick, {
     channels: [
-    env.channel
-  ]
+        env.channel
+    ]
 });
 
 
 
 //listening for messages from IRC
-client.addListener('message', function (from, to, message) {
+client.addListener('message', function(from, to, message) {
     console.log(from + ': ' + message);
     if (meeting_status == 'off')
         return;
@@ -47,13 +47,13 @@ client.addListener('message', function (from, to, message) {
         chat_id: env.tg_chatId,
         text: from + ': ' + message
     })
-
-    add_log(from + ': ' + message + '\n')
+var current_timestamp = moment().format('DD MM YYYY, hh:mm A');
+    add_log(current_timestamp + ' == ' + from + ': ' + message + '\n')
 });
 
 
 //log errors
-client.addListener('error', function (message) {
+client.addListener('error', function(message) {
     console.log('error: ', message);
 });
 
@@ -62,7 +62,7 @@ client.addListener('error', function (message) {
 
 var bot = new Bot({
     token: env.tgbot_token
-}).on('message', function (message) {
+}).on('message', function(message) {
 
     console.log(message);
     //if message is not text (stickers , image.....) then do nothing
@@ -73,30 +73,30 @@ var bot = new Bot({
     var command = (message.text.split('/')[1]);
 
     if (command) {
-        //remove bot name from the command    
+        //remove bot name from the command
         command = (command.replace(env.tgbot_name, '')).toLowerCase();
     }
 
     switch (command) {
-    case 'startmeeting':
-        startmeeting(message.from.id);
-        //exit from the function so that the /startmeeting is not send to the IRC
-        return;
+        case 'startmeeting':
+            startmeeting(message.from.id);
+            //exit from the function so that the /startmeeting is not send to the IRC
+            return;
 
-    case 'stopmeeting':
-        stopmeeting(message.from.id);
-        return;
+        case 'stopmeeting':
+            stopmeeting(message.from.id);
+            return;
 
-    case 'status':
-        send_status();
-        return;
+        case 'status':
+            send_status();
+            return;
 
-    case 'restart':
-        restart();
-        return;
+        /*case 'restart':
+            restart();
+            return;*/
 
-    default:
-        send(message);
+        default:
+            send(message);
 
 
     }
@@ -111,34 +111,35 @@ function send(message) {
     if (meeting_status == 'off')
         return;
 
-    //if the message is a reply , show (first_name in response to username)
+    //if the message is a reply , show (first_name + last name in response to username)
     if (message.reply_to_message) {
 
         //if reply is to a botzilla message then parse name from the message
         if (message.reply_to_message.from.first_name == env.tgbot_name.replace('@', '')) {
 
-            msg = message.from.first_name + '(in reply to ' + message.reply_to_message.from.first_name + ') : ' + message.text;
+            msg = message.from.first_name + ' ' + message.from.last_name + ' (in reply to ' + message.reply_to_message.text + ') : ' + message.text;
 
         } else {
             //Regular Expression to parse names from botzilla message
-            var reply_to = message.reply_to_message.text.match(/((?:[a-z0-9_@]+):+)/i);
+            var reply_to = message.reply_to_message.text;
+            //.match(/((?:[a-z0-9_@]+):+)/i);
             if (reply_to != undefined) {
                 console.log('here');
-                msg = message.from.first_name + '(in reply to ' + reply_to[0] + ') : ' + message.text;
+                msg = message.from.first_name + '(in reply to ' + message.reply_to_message.first_name + ' ' + message.reply_to_message.last_name + ' : ' + message.reply_to_message.text + ') : ' + message.text;
             } else
-                msg = message.from.first_name + '(in reply to ' + message.reply_to_message.from.first_name + ') : ' + message.text;
+                msg = message.from.first_name + message.from.last_name + '(in reply to (' + message.reply_to_message.from.first_name + '_' + message.reply_to_message.from.last_name + ' : ' + message.reply_to_message.text + ')) : ' + message.text ;
         }
 
 
     } else {
 
-        msg = message.from.first_name + ': ' + message.text;
+        msg = message.from.first_name + ' ' + message.from.last_name + ' : ' + message.text;
 
     }
-
+    var current_timestamp = moment().format('DD MM YYYY, hh:mm A');
     client.say(env.channel, msg);
     msg += '\n';
-    add_log(msg);
+    add_log(current_timestamp + ' == ' + msg);
     console.log(message);
 
 }
@@ -157,7 +158,7 @@ function startmeeting(from) {
 
     wstream = fs.createWriteStream(filename, options);
 
-    fs.writeFile('./mod', 'on', 'ascii', function (err) {
+    fs.writeFile('./mod', 'on', 'ascii', function(err) {
         //if error retry startmeeting
         if (err) {
             startmeeting(from);
@@ -170,10 +171,8 @@ function startmeeting(from) {
             meeting_logs = 'bots.mozillakerala.org/botzilla/logs/' + moment().format('DDMMMYY') + '.txt';
 
 
-
-
-
-            var meeting_msg = strformat("A Meeting was just started by %admin_name% at %time% on %date%\n\nThe agenda of the meeting is at %datelink%\n\nYou better be civil from now onwards because I'm logging everything you say.\n\nI'll tell you where to find the log after the meeting ends.", {
+            var meeting_msg = strformat("%c_time% A Meeting has just been started by %admin_name% at %time% on %date%\n\nThe agenda of the meeting is at %datelink%\n\nYou better be civil from now onwards because I'm logging everything you say.\n\nI'll tell you where to find the log after the meeting ends.", {
+                c_time: moment().format('DD MM YYYY, hh:mm A'),
                 time: meeting_time,
                 date: meeting_date,
                 datelink: meeting_link,
@@ -206,9 +205,8 @@ function stopmeeting(from) {
 
     meeting_status = 'off';
 
-
     //write status to mod file
-    fs.writeFile('./mod', 'off', 'ascii', function (err) {
+    fs.writeFile('./mod', 'off', 'ascii', function(err) {
         //if error retry stopmeeting
         if (err) {
             startmeeting(from);
@@ -221,6 +219,14 @@ function stopmeeting(from) {
                 loglink: meeting_logs,
                 admin_name: env.admin_name
             });
+
+            var end_msg = strformat("The meeting that %admin_name% started and chaired from %time% %date% has ended.",{
+                time: meeting_time,
+                date: meeting_date,
+                admin_name: env.admin_name
+            });
+            var current_timestamp = moment().format('DD MM YYYY, hh:mm A');
+            add_log(current_timestamp + ' == ' + end_msg);
 
             send({
                 from: {
@@ -239,7 +245,7 @@ function stopmeeting(from) {
 
             //stop logging to file
             wstream.end();
-            
+
             //Send the log to Telegram
             bot.sendDocument({
                 chat_id: env.tg_chatId,
@@ -247,7 +253,7 @@ function stopmeeting(from) {
                 files: {
                     document: filename
                 }
-            }, function (err, msg) {
+            }, function(err, msg) {
                 console.log(err);
                 console.log(msg);
             });
@@ -265,7 +271,7 @@ function send_status() {
 
 
 function restart() {
-//Exit the program and Assume PM2 or Forever will restart the process
+    //Exit the program and Assume PM2 or Forever will restart the process
     bot.sendMessage({
         chat_id: env.tg_chatId,
         parse_mode: 'Markdown',
